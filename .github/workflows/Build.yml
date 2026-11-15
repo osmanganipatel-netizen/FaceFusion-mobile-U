@@ -31,6 +31,16 @@ jobs:
             "cmake;3.22.1" \
             "ndk;27.2.12479018"
 
+      - name: Download & Extract Qualcomm QAIRT SDK
+        run: |
+          mkdir -p /tmp/qairt
+          curl -fL "https://softwarecenter.qualcomm.com/api/download/software/sdks/Qualcomm_AI_Runtime_Community/All/2.31.0.250130/v2.31.0.250130.zip" -o /tmp/qairt.zip
+          unzip -q /tmp/qairt.zip -d /tmp/qairt
+          rm -f /tmp/qairt.zip
+          SDK_DIR=$(find /tmp/qairt -maxdepth 3 -name "QnnBackend.h" -exec dirname {} \; | sed 's|/include/QNN||' | head -n 1)
+          echo "Found QNN_SDK_ROOT at: $SDK_DIR"
+          echo "QNN_SDK_ROOT=$SDK_DIR" >> $GITHUB_ENV
+
       - name: Grant Execute Permission for Gradle & Scripts
         run: |
           chmod +x work/android/gradlew
