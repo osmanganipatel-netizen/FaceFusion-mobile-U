@@ -21,18 +21,20 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK & Accept Licenses
+      - name: Setup Android SDK, NDK 27.2 & CMake 3.22.1
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "cmake;3.22.1" \
+            "ndk;27.2.12479018"
 
-      - name: Setup NDK
-        uses: nttld/setup-ndk@v1
-        with:
-          ndk-version: r26b
-
-      - name: Grant Execute Permission for Gradle
-        run: chmod +x work/android/gradlew
+      - name: Grant Execute Permission for Gradle & Scripts
+        run: |
+          chmod +x work/android/gradlew
+          chmod +x work/android/*.sh || true
 
       - name: Build Debug APK
         run: |
@@ -43,4 +45,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: FaceFusion-mobile-no-censorship
-          path: work/android/app/build/outputs/apk/debug/*.apk
+          path: work/android/**/build/outputs/apk/debug/*.apk
