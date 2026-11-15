@@ -31,15 +31,13 @@ jobs:
             "cmake;3.22.1" \
             "ndk;27.2.12479018"
 
-      - name: Extract Prebuilt Native Libraries from Upstream APK
+      - name: Extract Prebuilt Native Libraries into jniLibs
         run: |
-          mkdir -p /tmp/upstream /tmp/prebuilt
+          mkdir -p /tmp/upstream work/android/app/src/main/jniLibs/arm64-v8a
           curl -fL "https://github.com/AbrahamPaulJ/facefusion-mobile/releases/download/v0.9.41/facefusion-mobile-0.9.41-release.apk" -o /tmp/upstream/app.apk
           unzip -q /tmp/upstream/app.apk "lib/arm64-v8a/*" -d /tmp/upstream
-          mv /tmp/upstream/lib/arm64-v8a /tmp/prebuilt/arm64-v8a
-          ls -la /tmp/prebuilt/arm64-v8a
-          echo "" >> work/android/gradle.properties
-          echo "prebuiltNativeDir=/tmp/prebuilt" >> work/android/gradle.properties
+          cp -r /tmp/upstream/lib/arm64-v8a/* work/android/app/src/main/jniLibs/arm64-v8a/
+          ls -la work/android/app/src/main/jniLibs/arm64-v8a/
 
       - name: Grant Execute Permission for Gradle & Scripts
         run: |
@@ -49,7 +47,7 @@ jobs:
       - name: Build Debug APK
         run: |
           cd work/android
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug -x qnnStage -x externalNativeBuildDebug --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
