@@ -38,6 +38,8 @@ jobs:
           unzip -q /tmp/upstream/app.apk "lib/arm64-v8a/*" -d /tmp/upstream
           mv /tmp/upstream/lib/arm64-v8a /tmp/prebuilt/arm64-v8a
           ls -la /tmp/prebuilt/arm64-v8a
+          echo "" >> work/android/gradle.properties
+          echo "prebuiltNativeDir=/tmp/prebuilt" >> work/android/gradle.properties
 
       - name: Grant Execute Permission for Gradle & Scripts
         run: |
@@ -47,7 +49,7 @@ jobs:
       - name: Build Debug APK
         run: |
           cd work/android
-          ./gradlew assembleDebug -PprebuiltNativeDir=/tmp/prebuilt --stacktrace
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
