@@ -39,6 +39,10 @@ jobs:
           cp -r /tmp/upstream/lib/arm64-v8a/* work/android/app/src/main/jniLibs/arm64-v8a/
           ls -la work/android/app/src/main/jniLibs/arm64-v8a/
 
+      - name: Disable Broken C++ Source Build (Use Prebuilt jniLibs)
+        run: |
+          sed -i 's/externalNativeBuild/\/\/ disabled_externalNativeBuild/g' work/android/app/build.gradle.kts
+
       - name: Grant Execute Permission for Gradle & Scripts
         run: |
           chmod +x work/android/gradlew
@@ -47,7 +51,7 @@ jobs:
       - name: Build Debug APK
         run: |
           cd work/android
-          ./gradlew assembleDebug -x qnnStage -x externalNativeBuildDebug --stacktrace
+          ./gradlew assembleDebug -x qnnStage --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
