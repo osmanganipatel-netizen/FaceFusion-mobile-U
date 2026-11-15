@@ -31,15 +31,13 @@ jobs:
             "cmake;3.22.1" \
             "ndk;27.2.12479018"
 
-      - name: Download & Extract Qualcomm QAIRT SDK
+      - name: Extract Prebuilt Native Libraries from Upstream APK
         run: |
-          mkdir -p /tmp/qairt
-          curl -fL "https://softwarecenter.qualcomm.com/api/download/software/sdks/Qualcomm_AI_Runtime_Community/All/2.31.0.250130/v2.31.0.250130.zip" -o /tmp/qairt.zip
-          unzip -q /tmp/qairt.zip -d /tmp/qairt
-          rm -f /tmp/qairt.zip
-          SDK_DIR=$(find /tmp/qairt -maxdepth 3 -name "QnnBackend.h" -exec dirname {} \; | sed 's|/include/QNN||' | head -n 1)
-          echo "Found QNN_SDK_ROOT at: $SDK_DIR"
-          echo "QNN_SDK_ROOT=$SDK_DIR" >> $GITHUB_ENV
+          mkdir -p /tmp/upstream /tmp/prebuilt
+          curl -fL "https://github.com/AbrahamPaulJ/facefusion-mobile/releases/download/v0.9.41/facefusion-mobile-0.9.41-release.apk" -o /tmp/upstream/app.apk
+          unzip -q /tmp/upstream/app.apk "lib/arm64-v8a/*" -d /tmp/upstream
+          mv /tmp/upstream/lib/arm64-v8a /tmp/prebuilt/arm64-v8a
+          ls -la /tmp/prebuilt/arm64-v8a
 
       - name: Grant Execute Permission for Gradle & Scripts
         run: |
@@ -49,7 +47,7 @@ jobs:
       - name: Build Debug APK
         run: |
           cd work/android
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug -PprebuiltNativeDir=/tmp/prebuilt --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
