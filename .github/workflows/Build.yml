@@ -1,35 +1,56 @@
-name: Export All Repo Files
+name: Build FaceFusion Mobile APK
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
       - master
+  workflow_dispatch:
 
 jobs:
-  bundle:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Bundle All Text & Code Files
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK, NDK 27.2 & CMake 3.22.1
         run: |
-          find . -maxdepth 10 -not -path '*/.*' -o -path './.github/*' | sort | while read -r f; do
-            if [ -f "$f" ]; then
-              case "$f" in
-                *.kt|*.kts|*.yml|*.yaml|*.xml|*.cpp|*.h|*.txt|*.md|*.sh|*.properties|*.json)
-                  echo "==================== FILE: $f ====================" >> all_repo_files.txt
-                  cat "$f" >> all_repo_files.txt
-                  echo "" >> all_repo_files.txt
-                  ;;
-              esac
-            fi
-          done
-          ls -lh all_repo_files.txt
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "cmake;3.22.1" \
+            "ndk;27.2.12479018"
 
-      - name: Upload Bundled Source Text
+      - name: Extract Prebuilt Native Libraries from Upstream APK
+        run: |
+          mkdir -p /tmp/upstream /tmp/prebuilt
+          curl -fL "https://github.com/AbrahamPaulJ/facefusion-mobile/releases/download/v0.9.41/facefusion-mobile-0.9.41-release.apk" -o /tmp/upstream/app.apk
+          unzip -q /tmp/upstream/app.apk "lib/arm64-v8a/*" -d /tmp/upstream
+          mv /tmp/upstream/lib/arm64-v8a /tmp/prebuilt/arm64-v8a
+          ls -la /tmp/prebuilt/arm64-v8a
+
+      - name: Grant Execute Permission for Gradle & Scripts
+        run: |
+          chmod +x work/android/gradlew
+          chmod +x work/android/*.sh || true
+
+      - name: Build Debug APK
+        run: |
+          cd work/android
+          ./gradlew :app:assembleDebug -PprebuiltNativeDir=/tmp/prebuilt --stacktrace
+
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: all_repo_files
-          path: all_repo_files.txt
+          name: FaceFusion-mobile-no-censorship
+          path: work/android/app/build/outputs/apk/debug/*.apk
