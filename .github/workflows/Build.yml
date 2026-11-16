@@ -47,7 +47,7 @@ jobs:
       - name: Build Debug APK
         run: |
           cd work/android
-          ./gradlew :app:assembleDebug -PprebuiltNativeDir=/tmp/prebuilt --stacktrace
+          ./gradlew :app:assembleDebug -PprebuiltNativeDir=/tmp/prebuilt -x qnnStage --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
