@@ -31,17 +31,13 @@ jobs:
             "cmake;3.22.1" \
             "ndk;27.2.12479018"
 
-      - name: Extract Prebuilt Native Libraries into jniLibs
+      - name: Extract Prebuilt Native Libraries from Upstream APK
         run: |
-          mkdir -p /tmp/upstream work/android/app/src/main/jniLibs/arm64-v8a
+          mkdir -p /tmp/upstream /tmp/prebuilt
           curl -fL "https://github.com/AbrahamPaulJ/facefusion-mobile/releases/download/v0.9.41/facefusion-mobile-0.9.41-release.apk" -o /tmp/upstream/app.apk
           unzip -q /tmp/upstream/app.apk "lib/arm64-v8a/*" -d /tmp/upstream
-          cp -r /tmp/upstream/lib/arm64-v8a/* work/android/app/src/main/jniLibs/arm64-v8a/
-          ls -la work/android/app/src/main/jniLibs/arm64-v8a/
-
-      - name: Disable Broken C++ Source Build (Use Prebuilt jniLibs)
-        run: |
-          sed -i 's/externalNativeBuild/\/\/ disabled_externalNativeBuild/g' work/android/app/build.gradle.kts
+          mv /tmp/upstream/lib/arm64-v8a /tmp/prebuilt/arm64-v8a
+          ls -la /tmp/prebuilt/arm64-v8a
 
       - name: Grant Execute Permission for Gradle & Scripts
         run: |
@@ -51,10 +47,10 @@ jobs:
       - name: Build Debug APK
         run: |
           cd work/android
-          ./gradlew assembleDebug -x qnnStage --stacktrace
+          ./gradlew :app:assembleDebug -PprebuiltNativeDir=/tmp/prebuilt --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: FaceFusion-mobile-no-censorship
-          path: work/android/**/build/outputs/apk/debug/*.apk
+          path: work/android/app/build/outputs/apk/debug/*.apk
